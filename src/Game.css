@@ -1,0 +1,35 @@
+.games-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+.games-list-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    position: relative;
+}
+
+.game-box {
+    border: solid 1px black;
+    width: 250px;
+    height: 200px;
+    position: relative;
+    overflow: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 10px;
+    border-radius: 10px;
+
+}
+
+.game-id {
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.game-play-button {
+    width: 100%;
+}
