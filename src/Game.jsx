@@ -86,7 +86,7 @@ const Game = () => {
     if (isConnected) {
         if(chain?.id != process.env.REACT_APP_CHAIN_ID) {
             return (
-                <Button onClick={() => switchNetwork?.(process.env.REACT_APP_CHAIN_ID)}>CHANGE NETWORK</Button>
+                <Button onClick={() => switchNetwork?.(parseInt(process.env.REACT_APP_CHAIN_ID))}>CHANGE NETWORK</Button>
             )
         } else {
             if (data) {

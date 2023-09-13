@@ -1,13 +1,10 @@
-import logo from './logo.svg';
 import './App.css';
 import Game from './Game';
 import { WagmiConfig, configureChains, createClient, useNetwork } from 'wagmi';
-import { jsonRpcProvider } from "wagmi/providers/jsonRpc";
 import { RainbowKitProvider, darkTheme, getDefaultWallets } from '@rainbow-me/rainbowkit';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import '@rainbow-me/rainbowkit/styles.css';
-
-
+import { sapphireJsonRpcProvider } from 'wagmi-sapphire-provider';
 
 function App() {
   const eternovaQuickBattlesChain = {
@@ -31,7 +28,7 @@ function App() {
   const { chains, provider } = configureChains(
     [eternovaQuickBattlesChain],
     [
-      jsonRpcProvider({
+      sapphireJsonRpcProvider({
         rpc: (chain) => {
           return { http: chain.rpcUrls.default };
         },
@@ -50,9 +47,6 @@ function App() {
     connectors: connectors,
     provider,
   });
-
-
-  const { chain: currentChain, chains: currentChains } = useNetwork()
   
 
   return (
