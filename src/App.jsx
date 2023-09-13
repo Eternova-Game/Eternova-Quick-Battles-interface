@@ -6,6 +6,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import '@rainbow-me/rainbowkit/styles.css';
 import { sapphireJsonRpcProvider } from 'wagmi-sapphire-provider';
 
+
 function App() {
   const eternovaQuickBattlesChain = {
     id: 23295,

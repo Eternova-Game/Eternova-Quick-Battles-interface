@@ -1,6 +1,8 @@
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
 import { useState } from 'react';
-import { Button } from 'react-bootstrap';
+import Button from 'react-bootstrap/Button';
+import Modal from 'react-bootstrap/Modal';
+import Accordion from 'react-bootstrap/Accordion';
 import { useAccount, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
 import EternovaQuickBattlesABI from './abis/EternovaQuickBattles.abi.json';
 import './Game.css';
@@ -51,11 +53,28 @@ const Game = () => {
 
 
     const { config: configBattle, error: errorBattle } = usePrepareContractWrite({
-        address: '0xc1B161a52148252D81b91C151597D2830D6b0b12',
+        address: process.env.REACT_APP_CONTRACT_ADDRESS,
         abi: EternovaQuickBattlesABI,
         functionName: 'startBattle',
         args: [
-            '0x94a3294e2B721b852C64b8F867231BD7B2384338',
+            '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0',
+            [
+                5,
+                0,
+                0
+            ],
+            {
+                gasLimit: 1300000
+            },
+        ]
+    })
+
+    const { config: configRequestBattle, error: errorRequestBattle } = usePrepareContractWrite({
+        address: process.env.REACT_APP_CONTRACT_ADDRESS,
+        abi: EternovaQuickBattlesABI,
+        functionName: 'requestBattle',
+        args: [
+            4,
             [
                 5,
                 0,
@@ -68,6 +87,16 @@ const Game = () => {
     })
 
     const { data: battleData, isLoading: isLoadingBattle, isSuccess: isSuccessBattle, write: writeBattle } = useContractWrite({...configBattle, 
+        onSuccess(data) {
+            setSelectedHash(data.hash);
+            setLoading(true);
+        },
+        onError() {
+            setLoading(false);
+        }
+    });
+
+    const { data: requestBattleData, isLoading: isLoadingRequestBattle, isSuccess: usSuccessRequestBattle, write: writeRequestBattle } = useContractWrite({...configRequestBattle, 
         onSuccess(data) {
             setSelectedHash(data.hash);
             setLoading(true);
@@ -98,14 +127,15 @@ const Game = () => {
             return (
                 <div className='game-container'>
                     <div className="play-buttons">
-                        <Button onClick={() => writeBattle?.()}>Start Battle</Button>
+                        <Button variant='primary' onClick={() => writeBattle?.()}>Private game</Button>
+                        <Button variant='primary' onClick={() => writeBattle?.()}>Public game</Button>
                     </div>
-                    <hr></hr>
                     <div className="games-list-container">
                         {
-                            gamesList.map((game, index) => {
+                            gamesList?.map((game, index) => {
+                                if (parseInt(game.winner) == 0)
                                 return (
-                                    <div id={index} className='game-box'>
+                                    <div key={index} className='game-box'>
                                         <div className="game-id">
                                             GAME #{parseInt(game.battleId)}
                                         </div>
@@ -113,12 +143,23 @@ const Game = () => {
                                             (Round {parseInt(game.currentRound)})
                                         </div>
                                         <div className="game-versus">
-                                            You VS {game.opponent.slice(0,12)}...
+                                            {address.slice(0, 21)}...<br></br> VS<br></br>{game.opponent.slice(0, 21)}...
+                                        </div>
+                                        <div className="game-winner">
+                                            {
+                                                parseInt(game.winner) == 0 ? "" : (
+                                                    parseInt(game.winner) == address ? (
+                                                        "VICTORY"
+                                                    ) : (
+                                                        "DEFEAT"
+                                                    )
+                                                )
+                                            }
                                         </div>
                                         <div className="game-play">
                                             {
-                                                game.nextMove != game.opponent ? (
-                                                    <Button className='game-play-button'>Play turn</Button>
+                                                game.nextMove == address ? (
+                                                    <Button onClick={() => writeRequestBattle?.()} className='game-play-button'>Play turn</Button>
                                                 ) : (
                                                     <Button className='game-play-button' disabled>Opponents turn</Button>
                                                 )
@@ -130,6 +171,37 @@ const Game = () => {
                                 
                             })
                         }
+                    </div>
+                    <div className="history-list-container">
+                        <h2>Match history</h2>
+                        <Accordion className="history-box">
+                            {
+                                gamesList?.map((game, index) => {
+                                    if (parseInt(game.winner) != 0)
+                                    return (
+                                        <Accordion.Item key={index} eventKey={index}>
+                                            <Accordion.Header as='div' bsPrefix='history-box-header'>
+                                                <div className="history-box-header-result">{parseInt(game.winner) == address ? "VICTORY" : "DEFEAT"}</div>
+                                            </Accordion.Header>
+                                            <Accordion.Body>
+                                                <ul>
+                                                    <li>
+                                                        <strong>Battle ID: </strong>{parseInt(game.battleId)}
+                                                    </li>
+                                                    <li>
+                                                        <strong>Opponent: </strong>{parseInt(game.creator) == address ? game.opponent : game.creator}
+                                                    </li>
+                                                    <li>
+                                                        <strong>Status: </strong>{game.winner == address ? "Victory" : "Defeat"}
+                                                    </li>
+                                                </ul>
+                                            </Accordion.Body>
+                                        </Accordion.Item>
+                                    )
+                                })
+                            }
+                        </Accordion>
+
                     </div>
                 </div>
             )
