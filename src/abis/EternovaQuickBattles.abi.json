@@ -226,19 +226,41 @@
             "type": "address"
           },
           {
-            "internalType": "uint256",
-            "name": "predatorUnits",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "proximusUnits",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "bountyUnits",
-            "type": "uint256"
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "predatorAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proximusAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "bountyAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "predatorDefendingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proximusDefendingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "bountyDefendingUnits",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct EternovaQuickBattles.BattleAmount[3]",
+            "name": "amounts",
+            "type": "tuple[3]"
           },
           {
             "internalType": "uint256",

@@ -6,24 +6,46 @@ import Accordion from 'react-bootstrap/Accordion';
 import { useAccount, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
 import EternovaQuickBattlesABI from './abis/EternovaQuickBattles.abi.json';
 import './Game.css';
+import { Col, Form, InputGroup, Row } from 'react-bootstrap';
+import predator from './images/predator_w.png';
+import proximus_cobra from './images/proximus_cobra_w.png';
+import bounty_hunter from './images/bounty_hunter_w.png';
+import battle from './images/battle_icon.png';
+import battle_turn from './images/battle_turn_icon.png';
+import profile_1 from './images/profile_icon_1.png';
+import profile_2 from './images/profile_icon_2.png';
+import profile_3 from './images/profile_icon_3.png';
+import profile_4 from './images/profile_icon_4.png';
+import Round from './Round';
 
 
 
 const Game = () => {
     const { openConnectModal } = useConnectModal();
+    const [showGameModal, setShowGameModal] = useState(false);
+    const handleCloseGameModal = () => setShowGameModal(false);
+    const handleShowGameModal = () => setShowGameModal(true);
     const { address, pendingConnector, isConnected, isConnecting, isDisconnected } = useAccount();
     const [selectedHash, setSelectedHash] = useState(null);
     const [loading, setLoading] = useState(0);
     const { chains, error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
     const { chain } = useNetwork();
+    const [ predatorMaxTroops, setPredatorMaxTroops ] = useState(5)
+    const [ proximusCobraMaxTroops, setProximusCobraMaxTroops ] = useState(2)
+    const [ bountyHunterMaxTroops, setBountyHunterMaxTroops ] = useState(3)
+    let [ roundGameId, setRoundGameId ] = useState(null);
+    let [ startBattleArgs, setStartBattleArgs ] = useState({address: '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0', predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
     let gamesList = [];
+    const battleDataReads = [];
+    const profiles = [profile_2, profile_3, profile_4]
+
 
 
     const { data: hashData, isError: isErrorHashData, isLoading: isLoadingHashData } = useWaitForTransaction({
         hash: selectedHash,
         onSuccess(hashData) {
             setLoading(false);
-            console.log(battleData);
+            handleCloseGameModal();
         },
         onError(e) {
             setLoading(false);
@@ -35,21 +57,52 @@ const Game = () => {
         abi: EternovaQuickBattlesABI
     }
 
-    const { data, isError, isSuccess } = useContractReads({
+    const { data, isError, isSuccess, config } = useContractReads({
         contracts: [
             {
                 ...EternovaQuickBattlesContract,
                 functionName: 'getUserBattleData',
                 args: [
                     address,
-                    10,
+                    50,
                     0
+                ]
+            },
+            {
+                ...EternovaQuickBattlesContract,
+                functionName: 'getPublicBattleData',
+                args: [
+                    3
                 ]
             }
         ],
         watch: true,
-        enabled: isConnected ? true : false
+        enabled: isConnected ? true : false,
+        onSuccess(data) {
+        },
+        onError(e) {
+            console.error(e)
+        }
     })
+
+    const battleDataRead = {
+        ...EternovaQuickBattlesContract,
+        functionName: 'getPublicBattleData',
+        chainId: process.env.REACT_APP_CHAIN_ID
+    };
+
+    // const { data: dataPublicBattleData, isError: isErrorPublicBattleData, isSuccess: isSuccessPublicBattleData } = useContractReads({
+    //     contracts: battleDataReads,
+    //     watch: true,
+    //     enabled: battleDataReads ? true : false,
+    //     onSuccess() {
+    //         console.log('[getPublicBattleData]:', dataPublicBattleData)
+    //     },
+    //     onError(e) {
+    //         console.error(e)
+    //     }
+    // })
+
 
 
     const { config: configBattle, error: errorBattle } = usePrepareContractWrite({
@@ -57,16 +110,17 @@ const Game = () => {
         abi: EternovaQuickBattlesABI,
         functionName: 'startBattle',
         args: [
-            '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0',
+            startBattleArgs.address,
             [
-                5,
-                0,
-                0
+                startBattleArgs.predatorTroops,
+                startBattleArgs.proximusTroops,
+                startBattleArgs.bountyTroops
             ],
             {
                 gasLimit: 1300000
-            },
-        ]
+            }
+        ],
+        watch: true
     })
 
     const { config: configRequestBattle, error: errorRequestBattle } = usePrepareContractWrite({
@@ -74,11 +128,11 @@ const Game = () => {
         abi: EternovaQuickBattlesABI,
         functionName: 'requestBattle',
         args: [
-            4,
+            roundGameId,
             [
-                5,
-                0,
-                0
+                startBattleArgs.predatorTroops,
+                startBattleArgs.proximusTroops,
+                startBattleArgs.bountyTroops
             ],
             {
                 gasLimit: 1300000
@@ -106,10 +160,46 @@ const Game = () => {
         }
     });
 
+    function startNewBattle() {
+        clearRoundData();
+        setRoundGameId(null);
+        handleShowGameModal();
+    }
+
+    function playRound(gameId) {
+        clearRoundData();
+        setRoundGameId(gameId);
+        handleShowGameModal();
+    }
+
+    function clearRoundData() {
+        setStartBattleArgs({predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
+    }
+
+    const handleChangeAddress = (e) => {
+        setStartBattleArgs({address: e.target.value, predatorTroops: startBattleArgs.predatorTroops, proximusTroops: startBattleArgs.proximusTroops, bountyTroops: startBattleArgs.bountyTroops})
+    }
+
+    const handleChangeTroops = (e) => {
+        switch(e.target.attributes.name.value) {
+            case 'predator':
+                setStartBattleArgs({address: startBattleArgs.address, predatorTroops: Number(e.target.value), proximusTroops: startBattleArgs.proximusTroops, bountyTroops: startBattleArgs.bountyTroops})
+            break;
+            case 'proximus':
+                setStartBattleArgs({address: startBattleArgs.address, proximusTroops: Number(e.target.value), predatorTroops: startBattleArgs.predatorTroops, bountyTroops: startBattleArgs.bountyTroops})
+            break;
+            case 'bounty':
+                setStartBattleArgs({address: startBattleArgs.address, bountyTroops: Number(e.target.value), predatorTroops: startBattleArgs.predatorTroops, proximusTroops: startBattleArgs.proximusTroops})
+            break;
+        }
+    }
+
 
     if (isDisconnected)
     return (
-        <Button onClick={openConnectModal}>Connect wallet</Button>
+        <div className='connect-container'>
+            <Button onClick={openConnectModal}>Connect wallet</Button>
+        </div>
     )
 
     if (isConnected) {
@@ -119,32 +209,173 @@ const Game = () => {
             )
         } else {
             if (data) {
-                gamesList = data[0];
-                console.log(address)
-                console.log(gamesList)
+                gamesList = data?.[0];
+
+                if (gamesList)
+                for (const game of gamesList) {
+                    battleDataReads.push({
+                        ...battleDataRead, args: [
+                            parseInt(game.battleId)
+                        ]
+                    });
+                }
             }
 
             return (
                 <div className='game-container'>
+                    <Modal
+                        show={showGameModal}
+                        onHide={handleCloseGameModal}
+                        backdrop="static"
+                        keyboard={false}
+                        >
+                        
+                            <div className='explore-modal-title-container'>
+                                <div className='explore-modal-title'>
+                                    {
+                                        roundGameId ? (
+                                            <Round battleId={roundGameId} display={'title'} />
+                                        ) : (
+                                            <Round display={'title'} />
+                                        )
+                                    }
+                                    </div>
+                            </div>
+                        
+                        <Modal.Body>
+                            {roundGameId ? "" : (<InputGroup className='game-modal-opponent-address'>
+                                <InputGroup.Text>Opponents address</InputGroup.Text>
+                                    <Form.Control
+                                        type='text'
+                                        aria-label="Small"
+                                        aria-describedby="inputGroup-sizing-sm"
+                                        required
+                                        value={startBattleArgs.address}
+                                        onChange={handleChangeAddress}
+                                    />
+                            </InputGroup> )}
+                            <br></br>
+                            <h4 className='game-modal-title'>How many troops do you want to send?</h4><br></br>
+                            <div className="game-modal-troops">
+                                <div className="game-modal-troop-selector">
+                                    <img src={predator} className="game-modal-troop-image" />
+                                    <div className="game-modal-troop-info">
+                                        <div className="game-modal-troop-name">
+                                            Predator
+                                        </div>
+                                    </div>
+                                    <InputGroup>
+                                        <Form.Control
+                                            name='predator'
+                                            type='number'
+                                            defaultValue={0}
+                                            min={0}
+                                            max={predatorMaxTroops}
+                                            aria-label="Small"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value={startBattleArgs.predatorTroops}
+                                            onChange={handleChangeTroops}
+                                        />
+                                        <InputGroup.Text>/ {predatorMaxTroops}</InputGroup.Text>
+                                    </InputGroup>
+                                </div>
+                                <div className="game-modal-troop-selector">
+                                    <img src={proximus_cobra} className="game-modal-troop-image" />
+                                    <div className="game-modal-troop-info">
+                                        <div className="game-modal-troop-name">
+                                            Proximus Cobra
+                                        </div>
+                                    </div>
+                                    <InputGroup>
+                                        <Form.Control
+                                            name='proximus'
+                                            type='number'
+                                            defaultValue={0}
+                                            min={0}
+                                            max={proximusCobraMaxTroops}
+                                            aria-label="Small"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value={startBattleArgs.proximusTroops}
+                                            onChange={handleChangeTroops}
+                                        />
+                                        <InputGroup.Text>/ {proximusCobraMaxTroops}</InputGroup.Text>
+                                    </InputGroup>                                </div>
+                                <div className="game-modal-troop-selector">
+                                    <img src={bounty_hunter} className="game-modal-troop-image" />
+                                    <div className="game-modal-troop-info">
+                                        <div className="game-modal-troop-name">
+                                            Bounty Hunter
+                                        </div>
+                                    </div>
+                                    <InputGroup>
+                                        <Form.Control
+                                            name='bounty'
+                                            type='number'
+                                            defaultValue={0}
+                                            min={0}
+                                            max={bountyHunterMaxTroops}
+                                            aria-label="Small"
+                                            aria-describedby="inputGroup-sizing-sm"
+                                            value={startBattleArgs.bountyTroops}
+                                            onChange={handleChangeTroops}
+                                        />
+                                        <InputGroup.Text>/ {bountyHunterMaxTroops}</InputGroup.Text>
+                                    </InputGroup>                                </div>
+                            </div>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Row>
+                                <Col className='explore-col'>
+                                    <Button className='explore-button' variant="primary" onClick={() => roundGameId ? writeRequestBattle?.() : writeBattle?.()}>Attack</Button>    
+                                </Col>
+                                <Col className='explore-col'>
+                                    <Button className='explore-button-cancel' variant="secondary" onClick={handleCloseGameModal}>Abort</Button>
+                                </Col>
+                            </Row>
+                        </Modal.Footer>
+                    </Modal>
                     <div className="play-buttons">
-                        <Button variant='primary' onClick={() => writeBattle?.()}>Private game</Button>
-                        <Button variant='primary' onClick={() => writeBattle?.()}>Public game</Button>
+                        <Button className='game-play-button' variant='primary' onClick={() => startNewBattle()}>Private game</Button>
+                        <Button className='game-play-button' variant='primary' onClick={() => writeBattle?.()} disabled>Public game</Button>
                     </div>
                     <div className="games-list-container">
                         {
                             gamesList?.map((game, index) => {
+                                var profile_image;
+                                switch(index) {
+                                    default:
+                                        profile_image = profiles[index]
+                                    break;
+                                }
                                 if (parseInt(game.winner) == 0)
                                 return (
                                     <div key={index} className='game-box'>
-                                        <div className="game-id">
-                                            GAME #{parseInt(game.battleId)}
+                                        <div className={'point ' + (game.nextMove == address ? 'active' : '')}></div>
+                                        <div className="game-title">
+                                            <div className="game-id">
+                                                GAME #{parseInt(game.battleId)}
+                                            </div>
                                         </div>
                                         <div className="game-round">
                                             (Round {parseInt(game.currentRound)})
                                         </div>
-                                        <div className="game-versus">
-                                            {address.slice(0, 21)}...<br></br> VS<br></br>{game.opponent.slice(0, 21)}...
-                                        </div>
+                                        <Row className="game-versus">
+                                            <Col className='game-versus-profile-col'>
+                                                <img src={profile_1} className="game-versus-profile you" />
+                                                <div className="game-versus-profile-life-bar">
+                                                    <div className="game-versus-profile-life"></div>
+                                                    <div className="game-versus-profile-life-text">70</div>
+                                                </div>
+                                            </Col>
+                                            <Col><img className='game-versus-img' src={game.nextMove == address ? battle_turn : battle} /></Col>
+                                            <Col className='game-versus-profile-col'>
+                                                <img src={profile_image} className="game-versus-profile opponent" />
+                                                <div className="game-versus-profile-life-bar">
+                                                    <div className="game-versus-profile-life"></div>
+                                                    <div className="game-versus-profile-life-text">35</div>
+                                                </div>
+                                            </Col>
+                                        </Row>
                                         <div className="game-winner">
                                             {
                                                 parseInt(game.winner) == 0 ? "" : (
@@ -159,7 +390,7 @@ const Game = () => {
                                         <div className="game-play">
                                             {
                                                 game.nextMove == address ? (
-                                                    <Button onClick={() => writeRequestBattle?.()} className='game-play-button'>Play turn</Button>
+                                                    <Button onClick={() => game.nextMove == address ? playRound(game.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
                                                 ) : (
                                                     <Button className='game-play-button' disabled>Opponents turn</Button>
                                                 )
@@ -173,7 +404,7 @@ const Game = () => {
                         }
                     </div>
                     <div className="history-list-container">
-                        <h2>Match history</h2>
+                    <div className="games-history-bar col-lg-12 col"><p className="games-history-bar-text">Match history</p></div>
                         <Accordion className="history-box">
                             {
                                 gamesList?.map((game, index) => {
