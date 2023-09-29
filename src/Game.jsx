@@ -17,6 +17,8 @@ import profile_2 from './images/profile_icon_2.png';
 import profile_3 from './images/profile_icon_3.png';
 import profile_4 from './images/profile_icon_4.png';
 import Round from './Round';
+import { Bars } from  'react-loader-spinner'
+
 
 
 
@@ -27,7 +29,7 @@ const Game = () => {
     const handleShowGameModal = () => setShowGameModal(true);
     const { address, pendingConnector, isConnected, isConnecting, isDisconnected } = useAccount();
     const [selectedHash, setSelectedHash] = useState(null);
-    const [loading, setLoading] = useState(0);
+    const [loading, setLoading] = useState(false);
     const { chains, error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
     const { chain } = useNetwork();
     const [ predatorMaxTroops, setPredatorMaxTroops ] = useState(5)
@@ -66,13 +68,6 @@ const Game = () => {
                     address,
                     50,
                     0
-                ]
-            },
-            {
-                ...EternovaQuickBattlesContract,
-                functionName: 'getPublicBattleData',
-                args: [
-                    3
                 ]
             }
         ],
@@ -222,38 +217,46 @@ const Game = () => {
             }
 
             return (
+                <><div className={loading ? 'loading-container' : 'hidden'}>
+                    <Bars
+                        height = "80"
+                        width = "80"
+                        radius = "9"
+                        color = '#FF0099'
+                        ariaLabel = 'three-dots-loading'     
+                        wrapperStyle
+                        wrapperClass
+                    />
+                </div>
                 <div className='game-container'>
                     <Modal
                         show={showGameModal}
                         onHide={handleCloseGameModal}
                         backdrop="static"
                         keyboard={false}
-                        >
-                        
-                            <div className='explore-modal-title-container'>
-                                <div className='explore-modal-title'>
-                                    {
-                                        roundGameId ? (
-                                            <Round battleId={roundGameId} display={'title'} />
-                                        ) : (
-                                            <Round display={'title'} />
-                                        )
-                                    }
-                                    </div>
+                    >
+
+                        <div className='explore-modal-title-container'>
+                            <div className='explore-modal-title'>
+                                {roundGameId ? (
+                                    <Round battleId={roundGameId} display={'title'} />
+                                ) : (
+                                    <Round display={'title'} />
+                                )}
                             </div>
-                        
+                        </div>
+
                         <Modal.Body>
                             {roundGameId ? "" : (<InputGroup className='game-modal-opponent-address'>
                                 <InputGroup.Text>Opponents address</InputGroup.Text>
-                                    <Form.Control
-                                        type='text'
-                                        aria-label="Small"
-                                        aria-describedby="inputGroup-sizing-sm"
-                                        required
-                                        value={startBattleArgs.address}
-                                        onChange={handleChangeAddress}
-                                    />
-                            </InputGroup> )}
+                                <Form.Control
+                                    type='text'
+                                    aria-label="Small"
+                                    aria-describedby="inputGroup-sizing-sm"
+                                    required
+                                    value={startBattleArgs.address}
+                                    onChange={handleChangeAddress} />
+                            </InputGroup>)}
                             <br></br>
                             <h4 className='game-modal-title'>How many troops do you want to send?</h4><br></br>
                             <div className="game-modal-troops">
@@ -274,8 +277,7 @@ const Game = () => {
                                             aria-label="Small"
                                             aria-describedby="inputGroup-sizing-sm"
                                             value={startBattleArgs.predatorTroops}
-                                            onChange={handleChangeTroops}
-                                        />
+                                            onChange={handleChangeTroops} />
                                         <InputGroup.Text>/ {predatorMaxTroops}</InputGroup.Text>
                                     </InputGroup>
                                 </div>
@@ -296,8 +298,7 @@ const Game = () => {
                                             aria-label="Small"
                                             aria-describedby="inputGroup-sizing-sm"
                                             value={startBattleArgs.proximusTroops}
-                                            onChange={handleChangeTroops}
-                                        />
+                                            onChange={handleChangeTroops} />
                                         <InputGroup.Text>/ {proximusCobraMaxTroops}</InputGroup.Text>
                                     </InputGroup>                                </div>
                                 <div className="game-modal-troop-selector">
@@ -317,8 +318,7 @@ const Game = () => {
                                             aria-label="Small"
                                             aria-describedby="inputGroup-sizing-sm"
                                             value={startBattleArgs.bountyTroops}
-                                            onChange={handleChangeTroops}
-                                        />
+                                            onChange={handleChangeTroops} />
                                         <InputGroup.Text>/ {bountyHunterMaxTroops}</InputGroup.Text>
                                     </InputGroup>                                </div>
                             </div>
@@ -326,7 +326,7 @@ const Game = () => {
                         <Modal.Footer>
                             <Row>
                                 <Col className='explore-col'>
-                                    <Button className='explore-button' variant="primary" onClick={() => roundGameId ? writeRequestBattle?.() : writeBattle?.()}>Attack</Button>    
+                                    <Button className='explore-button' variant="primary" onClick={() => roundGameId ? writeRequestBattle?.() : writeBattle?.()}>Attack</Button>
                                 </Col>
                                 <Col className='explore-col'>
                                     <Button className='explore-button-cancel' variant="secondary" onClick={handleCloseGameModal}>Abort</Button>
@@ -339,15 +339,14 @@ const Game = () => {
                         <Button className='game-play-button' variant='primary' onClick={() => writeBattle?.()} disabled>Public game</Button>
                     </div>
                     <div className="games-list-container">
-                        {
-                            gamesList?.map((game, index) => {
-                                var profile_image;
-                                switch(index) {
-                                    default:
-                                        profile_image = profiles[index]
+                        {gamesList?.map((game, index) => {
+                            var profile_image;
+                            switch (index) {
+                                default:
+                                    profile_image = profiles[index];
                                     break;
-                                }
-                                if (parseInt(game.winner) == 0)
+                            }
+                            if (parseInt(game.winner) == 0)
                                 return (
                                     <div key={index} className='game-box'>
                                         <div className={'point ' + (game.nextMove == address ? 'active' : '')}></div>
@@ -377,38 +376,32 @@ const Game = () => {
                                             </Col>
                                         </Row>
                                         <div className="game-winner">
-                                            {
-                                                parseInt(game.winner) == 0 ? "" : (
-                                                    parseInt(game.winner) == address ? (
-                                                        "VICTORY"
-                                                    ) : (
-                                                        "DEFEAT"
-                                                    )
+                                            {parseInt(game.winner) == 0 ? "" : (
+                                                parseInt(game.winner) == address ? (
+                                                    "VICTORY"
+                                                ) : (
+                                                    "DEFEAT"
                                                 )
-                                            }
+                                            )}
                                         </div>
                                         <div className="game-play">
-                                            {
-                                                game.nextMove == address ? (
-                                                    <Button onClick={() => game.nextMove == address ? playRound(game.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
-                                                ) : (
-                                                    <Button className='game-play-button' disabled>Opponents turn</Button>
-                                                )
-                                            }
+                                            {game.nextMove == address ? (
+                                                <Button onClick={() => game.nextMove == address ? playRound(game.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
+                                            ) : (
+                                                <Button className='game-play-button' disabled>Opponents turn</Button>
+                                            )}
                                         </div>
-                                        
+
                                     </div>
-                                )
-                                
-                            })
-                        }
+                                );
+
+                        })}
                     </div>
                     <div className="history-list-container">
-                    <div className="games-history-bar col-lg-12 col"><p className="games-history-bar-text">Match history</p></div>
+                        <div className="games-history-bar col-lg-12 col"><p className="games-history-bar-text">Match history</p></div>
                         <Accordion className="history-box">
-                            {
-                                gamesList?.map((game, index) => {
-                                    if (parseInt(game.winner) != 0)
+                            {gamesList?.map((game, index) => {
+                                if (parseInt(game.winner) != 0)
                                     return (
                                         <Accordion.Item key={index} eventKey={index}>
                                             <Accordion.Header as='div' bsPrefix='history-box-header'>
@@ -428,13 +421,12 @@ const Game = () => {
                                                 </ul>
                                             </Accordion.Body>
                                         </Accordion.Item>
-                                    )
-                                })
-                            }
+                                    );
+                            })}
                         </Accordion>
 
                     </div>
-                </div>
+                </div></>
             )
         }
     

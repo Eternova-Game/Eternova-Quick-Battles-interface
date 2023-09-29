@@ -5,6 +5,7 @@ import { RainbowKitProvider, darkTheme, getDefaultWallets } from '@rainbow-me/ra
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import '@rainbow-me/rainbowkit/styles.css';
 import { sapphireJsonRpcProvider } from 'wagmi-sapphire-provider';
+import DocumentTitle from 'react-document-title';
 
 
 function App() {
@@ -51,24 +52,26 @@ function App() {
   
 
   return (
+    <>
+    <DocumentTitle title="Eternova Quick Battles" />
     <WagmiConfig client={client}>
       <RainbowKitProvider
-      theme={darkTheme({
-        accentColor: '#7b3fe4',
-        accentColorForeground: 'white',
-        borderRadius: 'small',
-        fontStack: 'system',
-        overlayBlur: 'small',
-      })}
-      chains={chains}>
-      
+        theme={darkTheme({
+          accentColor: '#7b3fe4',
+          accentColorForeground: 'white',
+          borderRadius: 'small',
+          fontStack: 'system',
+          overlayBlur: 'small',
+        })}
+        chains={chains}>
+
         <BrowserRouter>
           <Routes>
             <Route exact path='/' element={<Game />} />
           </Routes>
         </BrowserRouter>
       </RainbowKitProvider>
-    </WagmiConfig>
+    </WagmiConfig></>
   );
 }
 
