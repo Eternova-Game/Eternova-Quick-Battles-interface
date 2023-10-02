@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Accordion from 'react-bootstrap/Accordion';
-import { useAccount, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
+import { useAccount, useContractRead, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
 import EternovaQuickBattlesABI from './abis/EternovaQuickBattles.abi.json';
 import './Game.css';
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
@@ -39,7 +39,7 @@ const Game = () => {
     let [ startBattleArgs, setStartBattleArgs ] = useState({address: '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0', predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
     let gamesList = [];
     const battleDataReads = [];
-    const profiles = [profile_2, profile_3, profile_4]
+    const profiles = [profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4]
 
 
 
@@ -69,16 +69,36 @@ const Game = () => {
                     50,
                     0
                 ]
+            },
+            {
+                ...EternovaQuickBattlesContract,
+                functionName: 'getPublicBattleData',
+                args: [
+                    7
+                ]
             }
         ],
         watch: true,
         enabled: isConnected ? true : false,
         onSuccess(data) {
+            console.log(data)
         },
         onError(e) {
             console.error(e)
         }
     })
+
+    const { data: dataRead, isError: isErrorRead, isLoading: isLoadingRead } = useContractRead({
+        address: '0xecb504d39723b0be0e3a9aa33d646642d1051ee1',
+        abi: EternovaQuickBattlesABI,
+        functionName: 'getPublicBattleData',
+        args: [
+            7
+        ],
+        onSuccess(data) {
+            console.log('data:', data);
+        }
+      })
 
     const battleDataRead = {
         ...EternovaQuickBattlesContract,
@@ -123,7 +143,7 @@ const Game = () => {
         abi: EternovaQuickBattlesABI,
         functionName: 'requestBattle',
         args: [
-            roundGameId,
+            parseInt(roundGameId),
             [
                 startBattleArgs.predatorTroops,
                 startBattleArgs.proximusTroops,
@@ -187,6 +207,7 @@ const Game = () => {
                 setStartBattleArgs({address: startBattleArgs.address, bountyTroops: Number(e.target.value), predatorTroops: startBattleArgs.predatorTroops, proximusTroops: startBattleArgs.proximusTroops})
             break;
         }
+        console.warn(configRequestBattle);
     }
 
 

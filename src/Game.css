@@ -142,6 +142,7 @@ button.game-play-button {
     font-weight: 700 !important;
     line-height: normal !important;
     text-transform: uppercase;
+    width: 60%;
 }
 
 .explore-button-cancel {
@@ -281,6 +282,9 @@ p.explorer-modal-line {
     display: flex;
     flex-direction: row;
     align-items: center;
+    max-width: 100%;
+    left: 0px;
+    position: sticky;
 }
 
 .game-versus-img {
