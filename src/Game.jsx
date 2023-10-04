@@ -1,5 +1,5 @@
 import { ConnectButton, useConnectModal } from '@rainbow-me/rainbowkit';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Accordion from 'react-bootstrap/Accordion';
@@ -206,6 +206,22 @@ const Game = () => {
         console.warn(configRequestBattle);
     }
 
+    useEffect(() => {
+        if (isConnected && signer) {
+            const sapphireSigner = sapphire.wrap(signer);
+    
+            const contract = new Contract(process.env.REACT_APP_CONTRACT_ADDRESS, EternovaQuickBattlesABI, sapphireSigner);
+    
+            if (contract && sapphireSigner) {
+                contract.getPublicBattleData(7).then(
+                    (data) => {
+                        console.log('getPublicBattleData:', data);
+                    }
+                )
+            }
+        }
+    }, [isConnected, signer]);
+
 
     if (isDisconnected)
     return (
@@ -214,22 +230,7 @@ const Game = () => {
         </div>
     )
 
-    if (isConnected) {
-        console.log(connector)
-        // console.log('signer', signer);
-        const ethersSigner = sapphire
-            .wrap(signer)
-            .connect(ethers.getDefaultProvider(sapphire.NETWORKS.testnet.defaultGateway))
-
-        // const contract = new Contract(process.env.REACT_APP_CONTRACT_ADDRESS, EternovaQuickBattlesABI, ethersSigner);
-
-        // if (contract && ethersSigner) {
-        //     contract.getPublicBattleData(7).then(
-        //         (data) => {
-        //             console.log('getPublicBattleData:', data);
-        //         }
-        //     )
-        // }
+    if (isConnected && signer) {
 
         if(chain?.id != process.env.REACT_APP_CHAIN_ID) {
             return (
