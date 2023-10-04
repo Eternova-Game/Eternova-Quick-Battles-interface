@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
 import Accordion from 'react-bootstrap/Accordion';
-import { useAccount, useContractRead, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
+import { useAccount, useContractRead, useContractReads, useContractWrite, useNetwork, usePrepareContractWrite, useSigner, useSwitchNetwork, useWaitForTransaction } from 'wagmi';
 import EternovaQuickBattlesABI from './abis/EternovaQuickBattles.abi.json';
 import './Game.css';
 import { Col, Form, InputGroup, Row } from 'react-bootstrap';
@@ -18,6 +18,8 @@ import profile_3 from './images/profile_icon_3.png';
 import profile_4 from './images/profile_icon_4.png';
 import Round from './Round';
 import { Bars } from  'react-loader-spinner'
+import * as sapphire from '@oasisprotocol/sapphire-paratime';
+import { Contract, Wallet, ethers } from "ethers";
 
 
 
@@ -27,11 +29,12 @@ const Game = () => {
     const [showGameModal, setShowGameModal] = useState(false);
     const handleCloseGameModal = () => setShowGameModal(false);
     const handleShowGameModal = () => setShowGameModal(true);
-    const { address, pendingConnector, isConnected, isConnecting, isDisconnected } = useAccount();
+    const { address, pendingConnector, isConnected, isConnecting, isDisconnected, connector  } = useAccount();
     const [selectedHash, setSelectedHash] = useState(null);
     const [loading, setLoading] = useState(false);
     const { chains, error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
     const { chain } = useNetwork();
+    const { data: signer } = useSigner();
     const [ predatorMaxTroops, setPredatorMaxTroops ] = useState(5)
     const [ proximusCobraMaxTroops, setProximusCobraMaxTroops ] = useState(2)
     const [ bountyHunterMaxTroops, setBountyHunterMaxTroops ] = useState(3)
@@ -40,7 +43,6 @@ const Game = () => {
     let gamesList = [];
     const battleDataReads = [];
     const profiles = [profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4]
-
 
 
     const { data: hashData, isError: isErrorHashData, isLoading: isLoadingHashData } = useWaitForTransaction({
@@ -69,13 +71,6 @@ const Game = () => {
                     50,
                     0
                 ]
-            },
-            {
-                ...EternovaQuickBattlesContract,
-                functionName: 'getPublicBattleData',
-                args: [
-                    7
-                ]
             }
         ],
         watch: true,
@@ -88,17 +83,18 @@ const Game = () => {
         }
     })
 
-    const { data: dataRead, isError: isErrorRead, isLoading: isLoadingRead } = useContractRead({
-        address: '0xecb504d39723b0be0e3a9aa33d646642d1051ee1',
-        abi: EternovaQuickBattlesABI,
-        functionName: 'getPublicBattleData',
-        args: [
-            7
-        ],
-        onSuccess(data) {
-            console.log('data:', data);
-        }
-      })
+    // const { data: dataRead, isError: isErrorRead, isLoading: isLoadingRead } = useContractRead({
+    //     address: process.env.REACT_APP_CONTRACT_ADDRESS,
+    //     abi: EternovaQuickBattlesABI,
+    //     functionName: 'getPublicBattleData',
+    //     args: [
+    //         7
+    //     ],
+    //     onSuccess(data) {
+    //         console.log('data:', data);
+    //     }
+    // })
+    console.log('My address:', address);    
 
     const battleDataRead = {
         ...EternovaQuickBattlesContract,
@@ -219,6 +215,22 @@ const Game = () => {
     )
 
     if (isConnected) {
+        console.log(connector)
+        // console.log('signer', signer);
+        const ethersSigner = sapphire
+            .wrap(signer)
+            .connect(ethers.getDefaultProvider(sapphire.NETWORKS.testnet.defaultGateway))
+
+        // const contract = new Contract(process.env.REACT_APP_CONTRACT_ADDRESS, EternovaQuickBattlesABI, ethersSigner);
+
+        // if (contract && ethersSigner) {
+        //     contract.getPublicBattleData(7).then(
+        //         (data) => {
+        //             console.log('getPublicBattleData:', data);
+        //         }
+        //     )
+        // }
+
         if(chain?.id != process.env.REACT_APP_CHAIN_ID) {
             return (
                 <Button onClick={() => switchNetwork?.(parseInt(process.env.REACT_APP_CHAIN_ID))}>CHANGE NETWORK</Button>
