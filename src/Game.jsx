@@ -29,10 +29,11 @@ const Game = () => {
     const [showGameModal, setShowGameModal] = useState(false);
     const handleCloseGameModal = () => setShowGameModal(false);
     const handleShowGameModal = () => setShowGameModal(true);
-    const { address, pendingConnector, isConnected, isConnecting, isDisconnected, connector  } = useAccount();
+    const { address, isConnected, isDisconnected, connector  } = useAccount();
     const [selectedHash, setSelectedHash] = useState(null);
+    const [refreshBattle, setRefreshBattle] = useState(true);
     const [loading, setLoading] = useState(false);
-    const { chains, error, isLoading, pendingChainId, switchNetwork } = useSwitchNetwork();
+    const { switchNetwork } = useSwitchNetwork();
     const { chain } = useNetwork();
     const { data: signer } = useSigner();
     const [ predatorMaxTroops, setPredatorMaxTroops ] = useState(5)
@@ -41,7 +42,7 @@ const Game = () => {
     let [ roundGameId, setRoundGameId ] = useState(null);
     let [ isPublicGame, setIsPublicGame ] = useState(false);
     let [ startBattleArgs, setStartBattleArgs ] = useState({address: '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0', predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
-    let gamesList = [];
+    let gamesList = null;
     let [ newGameslist, setNewGamesList ] = useState([])
     let usedPredatorUnits = [];
     let usedBountyUnits = [];
@@ -49,12 +50,26 @@ const Game = () => {
     const battleDataReads = [];
     const profiles = [profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4]
 
+    useEffect(() => {
+		const handleConnectorUpdate = ({ account, chain }) => {
+			if (account) {
+                window.location.reload();
+			}
+		};
+
+		if (connector) {
+			connector.on("change", handleConnectorUpdate);
+		}
+
+		return () => connector?.off("change", handleConnectorUpdate);
+	}, [connector]);
 
     const { data: hashData, isError: isErrorHashData, isLoading: isLoadingHashData } = useWaitForTransaction({
         hash: selectedHash,
         onSuccess(hashData) {
             setLoading(false);
             handleCloseGameModal();
+            setRefreshBattle(true);
         },
         onError(e) {
             setLoading(false);
@@ -78,7 +93,7 @@ const Game = () => {
                 ]
             }
         ],
-        watch: true,
+        watch: false,
         enabled: isConnected ? true : false,
         onSuccess(data) {
             console.log(data)
@@ -88,17 +103,6 @@ const Game = () => {
         }
     })
 
-    // const { data: dataRead, isError: isErrorRead, isLoading: isLoadingRead } = useContractRead({
-    //     address: process.env.REACT_APP_CONTRACT_ADDRESS,
-    //     abi: EternovaQuickBattlesABI,
-    //     functionName: 'getPublicBattleData',
-    //     args: [
-    //         7
-    //     ],
-    //     onSuccess(data) {
-    //         console.log('data:', data);
-    //     }
-    // })
     console.log('My address:', address);    
 
     const battleDataRead = {
@@ -106,19 +110,6 @@ const Game = () => {
         functionName: 'getPublicBattleData',
         chainId: process.env.REACT_APP_CHAIN_ID
     };
-
-    // const { data: dataPublicBattleData, isError: isErrorPublicBattleData, isSuccess: isSuccessPublicBattleData } = useContractReads({
-    //     contracts: battleDataReads,
-    //     watch: true,
-    //     enabled: battleDataReads ? true : false,
-    //     onSuccess() {
-    //         console.log('[getPublicBattleData]:', dataPublicBattleData)
-    //     },
-    //     onError(e) {
-    //         console.error(e)
-    //     }
-    // })
-
 
 
     const { config: configBattle, error: errorBattle } = usePrepareContractWrite({
@@ -211,12 +202,16 @@ const Game = () => {
             case 'bounty':
                 setStartBattleArgs({address: startBattleArgs.address, bountyTroops: Number(e.target.value), predatorTroops: startBattleArgs.predatorTroops, proximusTroops: startBattleArgs.proximusTroops})
             break;
+            default:
+            break;
         }
         console.warn(configRequestBattle);
     }
 
     useEffect(() => {
-        if (isConnected && signer && data && gamesList && selectedHash) {
+        console.log('-----1-----', isConnected, signer, gamesList);
+        if (isConnected && signer && gamesList && gamesList.length > 1 && refreshBattle) {
+            console.log('-----2-----');
             const sapphireSigner = sapphire.wrap(signer);
             const contract = new Contract(process.env.REACT_APP_CONTRACT_ADDRESS, EternovaQuickBattlesABI, sapphireSigner);
 
@@ -243,16 +238,9 @@ const Game = () => {
                     console.log(newGameslist);
                 }
             )
-            
-            // if (contract && sapphireSigner) {
-            //     contract.getPublicBattleData(7).then(
-            //         (data) => {
-            //             console.log('getPublicBattleData:', data);
-            //         }
-            //     )
-            // }
+            setRefreshBattle(false);
         }
-    }, [isConnected, signer]);
+    }, [isConnected, signer, gamesList, refreshBattle]);
 
 
     if (isDisconnected)
@@ -269,7 +257,7 @@ const Game = () => {
                 <Button onClick={() => switchNetwork?.(parseInt(process.env.REACT_APP_CHAIN_ID))}>CHANGE NETWORK</Button>
             )
         } else {
-            if (data) {
+            if (data && !gamesList) {
                 gamesList = data?.[0];
 
                 if (gamesList)
