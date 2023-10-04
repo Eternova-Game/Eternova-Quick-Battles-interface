@@ -264,7 +264,12 @@
           },
           {
             "internalType": "uint256",
-            "name": "cityLife",
+            "name": "creatorCityLife",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "opponentCityLife",
             "type": "uint256"
           },
           {
@@ -276,6 +281,100 @@
         "internalType": "struct EternovaQuickBattles.PublicBattleData",
         "name": "data",
         "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+    "constant": true
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_ids",
+        "type": "uint256[]"
+      }
+    ],
+    "name": "getPublicBattleDataArray",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "opponent",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "currentRound",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "nextMove",
+            "type": "address"
+          },
+          {
+            "components": [
+              {
+                "internalType": "uint256",
+                "name": "predatorAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proximusAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "bountyAttackingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "predatorDefendingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "proximusDefendingUnits",
+                "type": "uint256"
+              },
+              {
+                "internalType": "uint256",
+                "name": "bountyDefendingUnits",
+                "type": "uint256"
+              }
+            ],
+            "internalType": "struct EternovaQuickBattles.BattleAmount[3]",
+            "name": "amounts",
+            "type": "tuple[3]"
+          },
+          {
+            "internalType": "uint256",
+            "name": "creatorCityLife",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "opponentCityLife",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "winner",
+            "type": "address"
+          }
+        ],
+        "internalType": "struct EternovaQuickBattles.PublicBattleData[]",
+        "name": "arrayData",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",

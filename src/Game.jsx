@@ -39,8 +39,13 @@ const Game = () => {
     const [ proximusCobraMaxTroops, setProximusCobraMaxTroops ] = useState(2)
     const [ bountyHunterMaxTroops, setBountyHunterMaxTroops ] = useState(3)
     let [ roundGameId, setRoundGameId ] = useState(null);
+    let [ isPublicGame, setIsPublicGame ] = useState(false);
     let [ startBattleArgs, setStartBattleArgs ] = useState({address: '0x8517CB745DA514A97fE97955CFCF229Ab83a7bF0', predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
     let gamesList = [];
+    let [ newGameslist, setNewGamesList ] = useState([])
+    let usedPredatorUnits = [];
+    let usedBountyUnits = [];
+    let usedProximusUnits = [];
     const battleDataReads = [];
     const profiles = [profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4, profile_2, profile_3, profile_4]
 
@@ -171,9 +176,12 @@ const Game = () => {
         }
     });
 
-    function startNewBattle() {
+    function startNewBattle(publicGame) {
         clearRoundData();
         setRoundGameId(null);
+        if (publicGame == true) {
+            setIsPublicGame(true);
+        }
         handleShowGameModal();
     }
 
@@ -184,6 +192,7 @@ const Game = () => {
     }
 
     function clearRoundData() {
+        setIsPublicGame(false);
         setStartBattleArgs({predatorTroops: 0, proximusTroops: 0, bountyTroops: 0})
     }
 
@@ -207,18 +216,41 @@ const Game = () => {
     }
 
     useEffect(() => {
-        if (isConnected && signer) {
+        if (isConnected && signer && data && gamesList && selectedHash) {
             const sapphireSigner = sapphire.wrap(signer);
-    
             const contract = new Contract(process.env.REACT_APP_CONTRACT_ADDRESS, EternovaQuickBattlesABI, sapphireSigner);
-    
-            if (contract && sapphireSigner) {
-                contract.getPublicBattleData(7).then(
-                    (data) => {
-                        console.log('getPublicBattleData:', data);
-                    }
-                )
+
+            let gamesId = [];
+
+            for (let game of gamesList) {
+                gamesId.push(game.battleId)
             }
+
+            contract.getPublicBattleDataArray(gamesId).then(
+                (data) => {
+                    let preNewGamesList = [];
+                    let lastRounds = data;
+                    for (let game of gamesList) {
+                        console.log(game)
+                        let newGame = {game};
+                        newGame.lastRounds = lastRounds[gamesList.indexOf(game)]
+                        newGame.creatorCityLife = lastRounds[gamesList.indexOf(game)].creatorCityLife
+                        newGame.opponentCityLife = lastRounds[gamesList.indexOf(game)].opponentCityLife
+                        newGame.battleId = game.battleId;
+                        preNewGamesList.push(newGame);
+                    }
+                    setNewGamesList(preNewGamesList);
+                    console.log(newGameslist);
+                }
+            )
+            
+            // if (contract && sapphireSigner) {
+            //     contract.getPublicBattleData(7).then(
+            //         (data) => {
+            //             console.log('getPublicBattleData:', data);
+            //         }
+            //     )
+            // }
         }
     }, [isConnected, signer]);
 
@@ -281,7 +313,7 @@ const Game = () => {
                         </div>
 
                         <Modal.Body>
-                            {roundGameId ? "" : (<InputGroup className='game-modal-opponent-address'>
+                            {roundGameId || isPublicGame ? "" : (<InputGroup className='game-modal-opponent-address'>
                                 <InputGroup.Text>Opponents address</InputGroup.Text>
                                 <Form.Control
                                     type='text'
@@ -307,7 +339,11 @@ const Game = () => {
                                             type='number'
                                             defaultValue={0}
                                             min={0}
-                                            max={predatorMaxTroops}
+                                            max={usedPredatorUnits.map((used) => {
+                                                if (parseInt(used.battleId) == roundGameId) {
+                                                    return (predatorMaxTroops - used.units)
+                                                }
+                                            })}
                                             aria-label="Small"
                                             aria-describedby="inputGroup-sizing-sm"
                                             value={startBattleArgs.predatorTroops}
@@ -370,48 +406,70 @@ const Game = () => {
                     </Modal>
                     <div className="play-buttons">
                         <Button className='game-play-button' variant='primary' onClick={() => startNewBattle()}>Private game</Button>
-                        <Button className='game-play-button' variant='primary' onClick={() => writeBattle?.()} disabled>Public game</Button>
+                        <Button className='game-play-button' variant='primary' onClick={() => startNewBattle(true)}>Public game</Button>
                     </div>
                     <div className="games-list-container">
-                        {gamesList?.map((game, index) => {
+                        
+                        {newGameslist?.map((game, index) => {
+                            game.creatorCityLifePercent = (game.creatorCityLife / 500) * 100;
+                            game.opponentCityLifePercent = (game.creatorCityLife / 500) * 100;
+
+                            if (game.lastRounds) {
+                                usedPredatorUnits.push({
+                                    battleId: game.battleId,
+                                    units: parseInt(game.lastRounds.amounts[0].predatorAttackingUnits) + parseInt(game.lastRounds.amounts[0].predatorDefendingUnits) + parseInt(game.lastRounds.amounts[1].predatorAttackingUnits) + parseInt(game.lastRounds.amounts[1].predatorDefendingUnits) + parseInt(game.lastRounds.amounts[2].predatorAttackingUnits) + parseInt(game.lastRounds.amounts[2].predatorDefendingUnits)
+                                })
+                                usedBountyUnits.push({
+                                    battleId: game.battleId,
+                                    units: parseInt(game.lastRounds.amounts[0].bountyAttackingUnits) + parseInt(game.lastRounds.amounts[0].bountyDefendingUnits) + parseInt(game.lastRounds.amounts[1].bountyAttackingUnits) + parseInt(game.lastRounds.amounts[1].bountyDefendingUnits) + parseInt(game.lastRounds.amounts[2].bountyAttackingUnits) + parseInt(game.lastRounds.amounts[2].bountyDefendingUnits)
+                                })
+                                usedProximusUnits.push({
+                                    battleId: game.battleId,
+                                    units: parseInt(game.lastRounds.amounts[0].proximusAttackingUnits) + parseInt(game.lastRounds.amounts[0].proximusDefendingUnits) + parseInt(game.lastRounds.amounts[1].proximusAttackingUnits) + parseInt(game.lastRounds.amounts[1].proximusDefendingUnits) + parseInt(game.lastRounds.amounts[2].proximusAttackingUnits) + parseInt(game.lastRounds.amounts[2].proximusDefendingUnits)
+                                })    
+                            }
+
+                            console.log('game:', game)
+
                             var profile_image;
                             switch (index) {
                                 default:
                                     profile_image = profiles[index];
                                     break;
                             }
-                            if (parseInt(game.winner) == 0)
+
+                            if (parseInt(game?.game?.winner) == 0)
                                 return (
                                     <div key={index} className='game-box'>
-                                        <div className={'point ' + (game.nextMove == address ? 'active' : '')}></div>
+                                        <div className={'point ' + (game?.game?.nextMove == address ? 'active' : '')}></div>
                                         <div className="game-title">
                                             <div className="game-id">
-                                                GAME #{parseInt(game.battleId)}
+                                                GAME #{parseInt(game?.game?.battleId)}
                                             </div>
                                         </div>
                                         <div className="game-round">
-                                            (Round {parseInt(game.currentRound)})
+                                            (Round {parseInt(game?.game?.currentRound)})
                                         </div>
                                         <Row className="game-versus">
                                             <Col className='game-versus-profile-col'>
                                                 <img src={profile_1} className="game-versus-profile you" />
                                                 <div className="game-versus-profile-life-bar">
-                                                    <div className="game-versus-profile-life"></div>
-                                                    <div className="game-versus-profile-life-text">70</div>
+                                                    <div className="game-versus-profile-life" style={{'width' : game?.game?.creator == address ? parseInt(game.creatorCityLifePercent) + "%" : parseInt(game.opponentCityLifePercent) + "%"}}></div>
+                                                    <div className="game-versus-profile-life-text">{game?.game?.creator == address ? parseInt(game.creatorCityLife) : parseInt(game.opponentCityLife)}</div>
                                                 </div>
                                             </Col>
-                                            <Col><img className='game-versus-img' src={game.nextMove == address ? battle_turn : battle} /></Col>
+                                            <Col><img className='game-versus-img' src={game?.game?.nextMove == address ? battle_turn : battle} /></Col>
                                             <Col className='game-versus-profile-col'>
                                                 <img src={profile_image} className="game-versus-profile opponent" />
                                                 <div className="game-versus-profile-life-bar">
-                                                    <div className="game-versus-profile-life"></div>
-                                                    <div className="game-versus-profile-life-text">35</div>
+                                                    <div className="game-versus-profile-life" style={{'width' : game?.game?.creator == address ? parseInt(game.opponentCityLifePercent) + "%" : parseInt(game.creatorCityLifePercent) + "%"}}></div>
+                                                    <div className="game-versus-profile-life-text">{game?.game?.creator == address ? parseInt(game.opponentCityLife) : parseInt(game.creatorCityLife)}</div>
                                                 </div>
                                             </Col>
                                         </Row>
                                         <div className="game-winner">
-                                            {parseInt(game.winner) == 0 ? "" : (
-                                                parseInt(game.winner) == address ? (
+                                            {parseInt(game?.game?.winner) == 0 ? "" : (
+                                                parseInt(game?.game?.winner) == address ? (
                                                     "VICTORY"
                                                 ) : (
                                                     "DEFEAT"
@@ -419,8 +477,8 @@ const Game = () => {
                                             )}
                                         </div>
                                         <div className="game-play">
-                                            {game.nextMove == address ? (
-                                                <Button onClick={() => game.nextMove == address ? playRound(game.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
+                                            {game?.game?.nextMove == address ? (
+                                                <Button onClick={() => game?.game?.nextMove == address ? playRound(game?.game?.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
                                             ) : (
                                                 <Button className='game-play-button' disabled>Opponents turn</Button>
                                             )}

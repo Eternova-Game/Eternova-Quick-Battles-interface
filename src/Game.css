@@ -289,6 +289,7 @@ p.explorer-modal-line {
 
 .game-versus-img {
     max-width: 90px;
+    width: 100%;
 }
 
 .game-versus-profile {
@@ -319,7 +320,7 @@ p.explorer-modal-line {
 }
 
 .game-versus-profile-life {
-    width: 70%;
+    
     height: 100%;
     background-color: limegreen;
 }
