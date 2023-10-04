@@ -178,6 +178,26 @@ const Game = () => {
 
     function playRound(gameId) {
         clearRoundData();
+        for (const usedPredatorUnit of usedPredatorUnits) {
+            if (usedPredatorUnit.battleId == gameId) {
+                setPredatorMaxTroops(5 - usedPredatorUnit.units);
+                break;
+            }
+        }
+
+        for (const usedBountyUnit of usedBountyUnits) {
+            if (usedBountyUnit.battleId == gameId) {
+                setBountyHunterMaxTroops(3 - usedBountyUnit.units);
+                break;
+            }
+        }
+
+        for (const usedProximusUnit of usedProximusUnits) {
+            if (usedProximusUnit.battleId == gameId) {
+                setProximusCobraMaxTroops(2 - usedProximusUnit.units);
+                break;
+            }
+        }
         setRoundGameId(gameId);
         handleShowGameModal();
     }
@@ -327,11 +347,7 @@ const Game = () => {
                                             type='number'
                                             defaultValue={0}
                                             min={0}
-                                            max={usedPredatorUnits.map((used) => {
-                                                if (parseInt(used.battleId) == roundGameId) {
-                                                    return (predatorMaxTroops - used.units)
-                                                }
-                                            })}
+                                            max={predatorMaxTroops}
                                             aria-label="Small"
                                             aria-describedby="inputGroup-sizing-sm"
                                             value={startBattleArgs.predatorTroops}
@@ -465,10 +481,10 @@ const Game = () => {
                                             )}
                                         </div>
                                         <div className="game-play">
-                                            {game?.game?.nextMove == address ? (
-                                                <Button onClick={() => game?.game?.nextMove == address ? playRound(game?.game?.battleId) : handleShowGameModal()} className='game-play-button'>Play turn</Button>
+                                            {game?.game?.nextMove == address && !game?.game?.winner ? (
+                                                <Button onClick={() => playRound(game?.game?.battleId)} className='game-play-button'>Play turn</Button>
                                             ) : (
-                                                <Button className='game-play-button' disabled>Opponents turn</Button>
+                                                (!game?.game?.winner ? <Button className='game-play-button' disabled>Opponents turn</Button> : <Button className='game-play-button' disabled>Game ended</Button>)
                                             )}
                                         </div>
 
